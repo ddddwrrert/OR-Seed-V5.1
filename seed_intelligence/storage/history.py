@@ -1,14 +1,11 @@
-from ..contracts import numeric
+from .candidate_store import recent_challengers
+from .hypothesis_store import hypotheses_for
 
 def reference_ids(rows, parent):
-    recent = [
-        row["id"] for row in reversed(rows[-10:])
-        if row.get("id") and row.get("parent") == parent["id"] and numeric(row.get("fitness"))
-    ]
-    return list(dict.fromkeys(recent + ([parent["parent"]] if parent.get("parent") else [])))
+    compared = recent_challengers(rows, parent["id"])
+    existing = [report["reference"] for report in hypotheses_for(rows, parent["id"]) if report.get("reference")]
+    ancestor = [parent["parent"]] if parent.get("parent") else []
+    return list(dict.fromkeys(compared + existing + ancestor))
 
-def discovered(rows, parent):
-    for row in rows[-10:]:
-        report = row.get("discovery")
-        if numeric(row.get("fitness")) and isinstance(report, dict) and report.get("parent") == parent:
-            yield report
+def discovered(rows, parent_id):
+    return hypotheses_for(rows, parent_id)

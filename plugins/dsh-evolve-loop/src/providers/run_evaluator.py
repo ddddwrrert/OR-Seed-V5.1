@@ -118,9 +118,9 @@ def main() -> None:
     metrics = evaluate(function, code, program.suffix, settings["timeout"], settings["max_retries"])
     result = {"metrics": metrics}
     if settings.get("or_seed_panel") is True:
-        contract = evaluation_contract()
-        result.update(fitness=contract.panel_score(metrics), manifest=contract.manifest(),
-                      profile=contract.candidate_profile(metrics))
+        evaluation_contract()
+        from seed_intelligence.integration.evaluation_hook import score_evaluation
+        result = score_evaluation(metrics, code)
     else:
         result["fitness"] = get_score(metrics)
     result_stream.write(json.dumps(result, default=str) + "\n")

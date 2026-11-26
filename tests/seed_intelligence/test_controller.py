@@ -72,3 +72,41 @@ class StrategyIntegrationTests(unittest.TestCase):
         self.assertEqual(decide(rows, PARENT, BUDGET, 0, config, {})["id"], "a")
         self.assertIsNone(decide(rows, PARENT, BUDGET, 4, config, {}))
         self.assertIsNone(decide(rows, PARENT, {**BUDGET, "used": 4}, 0, config, {}))
+
+class RecordedEvidenceTests(unittest.TestCase):
+    def test_optional_telemetry_and_old_discovery_reach_m7(self):
+        former, current = evaluation([110] * 25 + [90] * 25), evaluation([100] * 50)
+        former["metrics"].update(max_execution_time_sec=2, proxy_score=10, proxy_score_direction=1)
+        current["metrics"].update(
+            max_execution_time_sec=3, proxy_score=5, proxy_score_direction=1,
+            search_trace_score="official", search_trace=[{"score": 5}, {"score": 7}, {"score": 7}],
+            operator_gains={"custom move": [1, 3]},
+        )
+        for record, seconds in ((former, 1), (current, 2)):
+            for case in record["metrics"]["seed_scores"]:
+                case["seconds"] = seconds
+        panels = {PARENT["id"]: current, CHILD["id"]: former}
+        initial = decide([CHILD], PARENT, BUDGET, 0, {}, panels)
+        telemetry = initial["references"][0]["telemetry"]
+        self.assertEqual(telemetry["trace"]["tailPlateauSamples"], 2)
+        self.assertEqual(telemetry["operators"]["custom move"]["meanReportedGain"], 2)
+        self.assertEqual(telemetry["pairedRuntime"]["slowerSeeds"], 50)
+        report = {**hypothesis("unseen"), "reference": CHILD["id"], "expectedGain": 2,
+                  "cost": "one candidate", "telemetryKeys": ["trace", "pairedRuntime"]}
+        checked = assess(initial, report, PARENT, 101, {})["discovery"]
+        self.assertEqual(checked["recordedEvidence"]["trace"]["observedGain"], 2)
+        fabricated = {**report, "telemetryKeys": ["missing"]}
+        self.assertIsNone(assess(initial, fabricated, PARENT, 101, {})["discovery"])
+        later = [CHILD, {"id": "c000002", "parent": PARENT["id"], "fitness": 101,
+                         "discoveryAttempt": True, "discovery": checked}]
+        later.extend({"id": f"c{index:06}", "parent": "other", "fitness": 100}
+                     for index in range(3, 20))
+        selected = decide(later, PARENT, BUDGET, 1, {}, panels)
+        self.assertEqual(selected["id"], "unseen")
+        self.assertFalse(selected["inspect"])
+
+    def test_renaming_same_direction_does_not_restart_archived_trials(self):
+        prior = hypothesis("old")
+        updated = {**hypothesis("new"), "direction": "  TRY   OLD "}
+        rows = [{"guidance": {**prior, "outcome": "no-improvement", "delta": -1}}] * 2
+        self.assertIsNone(decide(rows, PARENT, BUDGET, 0, {"hypotheses": [updated]}, {}))

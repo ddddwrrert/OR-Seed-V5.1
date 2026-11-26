@@ -41,7 +41,7 @@ test('M7 uses alternatives, updates reliability and archives failures', async t 
   assert.equal(candidate.reliability, 0.75)
   const failure = { guidance: observationFor(first, 100, 90) }
   assert.equal(await guidanceFor(files, [failure, failure], parent, budget, config), undefined)
-  const alternate = { ...hypothesis, id: 'alternate' }
+  const alternate = { ...hypothesis, id: 'alternate', direction: 'Try a different search operator.' }
   const next = await guidanceFor(files, [failure, failure], parent, budget,
     { ...config, hypotheses: [hypothesis, alternate] })
   assert.equal(next.id, 'alternate')
@@ -161,4 +161,5 @@ test('M9 checks whole-panel upside and M1 verifies open feature observations', a
   assert.equal(await guidanceFor(files, [{ ...historical, discoveryAttempt: true }], parent, budget), undefined)
   assert.equal(workerHypothesis('OR_SEED_HYPOTHESIS {}'), undefined)
 })
+
 

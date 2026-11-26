@@ -1,5 +1,2 @@
-from ..contracts import numeric
-
-def eligible(parent, budget, spent, cap):
-    return (numeric(parent.get("fitness")) and budget["used"] % 2 == 1
-            and budget["remaining"] >= 2 and spent < cap)
+"""Compatibility import for callers of the first V5.1 budget module."""
+from .budget_controller import eligible

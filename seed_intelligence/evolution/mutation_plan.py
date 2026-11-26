@@ -1,8 +1,11 @@
+from .exploration_dispatcher import dispatch
+
 def plan(selected, inspect, references, capabilities, companion=None):
-    if not selected and not inspect:
-        return None
+    instructions = dispatch(selected, inspect, references)
+    if instructions is None:
+        return
     result = {**(selected or {}), "inspect": inspect, "references": references if inspect else [],
-              "capabilities": capabilities}
+              "capabilities": capabilities, "instructions": instructions}
     if companion:
         result["composition"] = companion
     return result

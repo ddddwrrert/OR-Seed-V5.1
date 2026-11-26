@@ -55,7 +55,8 @@ def evaluate(program_path):
         logger.info("Result feedback completed")
         seed_scores = [
             {"seed": seed, "score": case.absolute_score,
-             "accepted": case.judge_result == JudgeResult.ACCEPTED}
+             "accepted": case.judge_result == JudgeResult.ACCEPTED,
+             "seconds": case.execution_time}
             for seed, case in zip(range(num_public_cases), public_result.case_results, strict=True)
         ]
         return {

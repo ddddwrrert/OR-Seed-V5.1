@@ -14,6 +14,7 @@ def resolve(config, budget):
     return {
         "cap": min(cap, maximum // 2) if type(cap) is int else 0,
         "threshold": max(0, threshold) if numeric(threshold) else 0,
+        "automaticBuiltins": config.get("automaticBuiltins", True) is not False,
         "discovery": config.get("discovery", True) is not False,
         "hypotheses": config.get("hypotheses", []),
     }

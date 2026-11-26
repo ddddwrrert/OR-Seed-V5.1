@@ -1,10 +1,8 @@
-from ..core.evaluation_contract import panel
+from .baseline_reader import parent_metrics
+from .capability_discovery import capabilities
+from .reactive_adapter import reactive_adapter
 
 def evidence_capabilities(evaluation):
-    metrics = (evaluation or {}).get("metrics", {})
-    return {
-        "pairedScores": panel(metrics) is not None,
-        "runtime": isinstance(metrics.get("max_execution_time_sec"), (int, float)),
-        "trace": isinstance(metrics.get("search_trace"), list) and bool(metrics["search_trace"]),
-        "operatorGains": isinstance(metrics.get("operator_gains"), dict) and bool(metrics["operator_gains"]),
-    }
+    metrics = parent_metrics(evaluation)
+    adapter = reactive_adapter(capabilities(metrics), metrics)
+    return {**adapter.capabilities, "adapter": adapter.name}
